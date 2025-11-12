@@ -1,0 +1,270 @@
+{
+  "description": "VM configuration template for Golang development environment",
+  "vm_settings": {
+    "general": {
+      "name_prefix": "golang-dev",
+      "description": "Automated Golang development environment with vcpkg and MSBuildTools"
+    },
+    "hardware": {
+      "cpu": {
+        "cores": 4,
+        "sockets": 1,
+        "type": "host",
+        "comment": "Use 'host' for best performance. Adjust cores based on workload."
+      },
+      "memory": {
+        "size_mb": 8192,
+        "min_mb": 4096,
+        "max_mb": 32768,
+        "ballooning": true,
+        "comment": "8GB minimum, 16GB recommended for heavy development"
+      },
+      "disk": {
+        "size_gb": 100,
+        "storage": "local-lvm",
+        "cache": "writeback",
+        "discard": true,
+        "ssd_emulation": true,
+        "iothread": true,
+        "comment": "SSD storage recommended. Minimum 100GB, 200GB+ for large projects"
+      },
+      "network": {
+        "model": "virtio",
+        "bridge": "vmbr0",
+        "firewall": false,
+        "rate_limit_mbps": null,
+        "comment": "VirtIO provides best performance"
+      }
+    },
+    "system": {
+      "machine_type": "q35",
+      "bios": "ovmf",
+      "efi_disk": {
+        "enabled": true,
+        "storage": "local-lvm",
+        "size_mb": 4
+      },
+      "scsi_controller": "virtio-scsi-single"
+    },
+    "os": {
+      "type": "win11",
+      "iso_path": "local:iso/Windows-2022.iso",
+      "virtio_drivers_iso": "local:iso/virtio-win.iso",
+      "comment": "Can use Windows Server 2019/2022 or Windows 10/11"
+    },
+    "features": {
+      "qemu_agent": {
+        "enabled": true,
+        "comment": "Install QEMU Guest Agent for better integration"
+      },
+      "backup": {
+        "enabled": true,
+        "schedule": "daily",
+        "storage": "backup-storage",
+        "retention": 7,
+        "comment": "Adjust retention policy based on needs"
+      },
+      "snapshot": {
+        "before_updates": true,
+        "comment": "Create snapshots before major changes"
+      }
+    }
+  },
+  "proxmox_cli_examples": {
+    "create_vm": "qm create 100 --name win-golang-template --memory 8192 --cores 4 --cpu host --sockets 1 --net0 virtio,bridge=vmbr0 --scsihw virtio-scsi-single --scsi0 local-lvm:100,cache=writeback,discard=on,ssd=1 --ide2 local:iso/Windows-2022.iso,media=cdrom --boot order=scsi0 --ostype win11 --machine q35 --bios ovmf --efidisk0 local-lvm:1,format=raw,efitype=4m,pre-enrolled-keys=1",
+    "resize_disk": "qm resize 100 scsi0 +50G",
+    "set_memory": "qm set 100 --memory 16384",
+    "set_cores": "qm set 100 --cores 8",
+    "add_cdrom": "qm set 100 --ide3 local:iso/virtio-win.iso,media=cdrom",
+    "convert_to_template": "qm template 100",
+    "clone_vm": "qm clone 100 101 --name golang-dev-01 --full",
+    "start_vm": "qm start 101",
+    "stop_vm": "qm stop 101",
+    "get_status": "qm status 101",
+    "get_config": "qm config 101"
+  },
+  "recommended_configurations": {
+    "light_development": {
+      "description": "Single developer, small projects",
+      "cpu_cores": 2,
+      "memory_gb": 4,
+      "disk_gb": 50,
+      "use_case": "Learning, small scripts, basic development"
+    },
+    "medium_development": {
+      "description": "Single developer, multiple projects",
+      "cpu_cores": 4,
+      "memory_gb": 8,
+      "disk_gb": 100,
+      "use_case": "Regular development, medium-sized projects"
+    },
+    "heavy_development": {
+      "description": "Team development, large projects",
+      "cpu_cores": 8,
+      "memory_gb": 16,
+      "disk_gb": 200,
+      "use_case": "Large projects, parallel builds, CI/CD"
+    },
+    "build_server": {
+      "description": "Continuous integration and builds",
+      "cpu_cores": 16,
+      "memory_gb": 32,
+      "disk_gb": 500,
+      "use_case": "Automated builds, testing, compilation"
+    }
+  },
+  "network_configuration": {
+    "static_ip_example": {
+      "interface": "Ethernet",
+      "ip_address": "192.168.1.100",
+      "subnet_mask": "255.255.255.0",
+      "default_gateway": "192.168.1.1",
+      "dns_servers": ["8.8.8.8", "8.8.4.4"],
+      "powershell_command": "New-NetIPAddress -InterfaceAlias 'Ethernet' -IPAddress 192.168.1.100 -PrefixLength 24 -DefaultGateway 192.168.1.1; Set-DnsClientServerAddress -InterfaceAlias 'Ethernet' -ServerAddresses 8.8.8.8,8.8.4.4"
+    },
+    "dhcp_configuration": {
+      "enabled": true,
+      "comment": "Default configuration, automatically assigns IP"
+    }
+  },
+  "firewall_rules": {
+    "rdp": {
+      "port": 3389,
+      "protocol": "tcp",
+      "direction": "in",
+      "action": "accept",
+      "comment": "Allow Remote Desktop Protocol"
+    },
+    "golang_app": {
+      "port": 8080,
+      "protocol": "tcp",
+      "direction": "in",
+      "action": "accept",
+      "comment": "Default port for Go web applications"
+    },
+    "custom_ports": {
+      "comment": "Add additional ports as needed for your applications"
+    }
+  },
+  "automation": {
+    "scheduled_task": {
+      "name": "GolangEnvSetup",
+      "description": "Automatically run setup script on first boot",
+      "trigger": "startup",
+      "script_path": "C:\\OnetimeGolangEnv\\setup-golang-env.ps1",
+      "run_as": "SYSTEM",
+      "enabled": true
+    },
+    "cloud_init": {
+      "enabled": false,
+      "comment": "Advanced: Use cloudbase-init for Windows automation",
+      "config_drive": "ide2"
+    }
+  },
+  "software_versions": {
+    "golang": {
+      "default": "1.21.5",
+      "latest_stable": "1.22.0",
+      "comment": "Update as needed, check https://golang.org/dl/"
+    },
+    "git": {
+      "managed_by": "chocolatey",
+      "comment": "Latest version installed via Chocolatey"
+    },
+    "vscode": {
+      "managed_by": "chocolatey",
+      "extensions": [
+        "golang.go",
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools"
+      ]
+    },
+    "vcpkg": {
+      "source": "github",
+      "repository": "https://github.com/microsoft/vcpkg.git",
+      "default_path": "C:\\vcpkg"
+    },
+    "visual_studio_buildtools": {
+      "version": "2022",
+      "workload": "vctools",
+      "managed_by": "chocolatey"
+    }
+  },
+  "maintenance": {
+    "backup_schedule": {
+      "frequency": "daily",
+      "time": "02:00",
+      "retention_days": 7,
+      "storage": "backup-storage"
+    },
+    "update_policy": {
+      "windows_updates": "manual",
+      "golang_updates": "manual",
+      "vcpkg_updates": "git pull",
+      "comment": "Disable automatic updates to prevent disruption"
+    },
+    "monitoring": {
+      "cpu_threshold_percent": 80,
+      "memory_threshold_percent": 85,
+      "disk_threshold_percent": 90,
+      "alert_enabled": true
+    }
+  },
+  "security": {
+    "recommendations": [
+      "Use strong passwords for Windows accounts",
+      "Enable Windows Firewall for public networks",
+      "Use VPN for remote access (don't expose RDP directly)",
+      "Regular security updates",
+      "Enable Windows Defender or antivirus",
+      "Use separate user account for daily work (not Administrator)",
+      "Regular backups",
+      "Enable disk encryption if handling sensitive data"
+    ],
+    "firewall": {
+      "public_profile": "enabled",
+      "private_profile": "optional",
+      "domain_profile": "enabled"
+    },
+    "rdp": {
+      "network_level_authentication": true,
+      "encryption_level": "high",
+      "idle_timeout_minutes": 30
+    }
+  },
+  "troubleshooting": {
+    "common_issues": {
+      "slow_performance": [
+        "Check CPU type is set to 'host'",
+        "Enable SSD emulation",
+        "Verify VirtIO drivers installed",
+        "Check resource allocation (CPU/RAM)"
+      ],
+      "network_not_working": [
+        "Install VirtIO network drivers",
+        "Check bridge configuration in Proxmox",
+        "Verify Windows Firewall settings",
+        "Check cable/network settings"
+      ],
+      "rdp_connection_failed": [
+        "Verify Remote Desktop is enabled",
+        "Check Windows Firewall allows RDP",
+        "Verify correct IP address",
+        "Check network connectivity"
+      ],
+      "setup_script_failed": [
+        "Check C:\\setup-log.txt for errors",
+        "Verify internet connectivity",
+        "Check PowerShell execution policy",
+        "Run script as Administrator"
+      ]
+    }
+  },
+  "notes": {
+    "template_creation": "Create template after Windows installation but before running setup script",
+    "disk_space": "Allocate sufficient space for Go packages and vcpkg libraries",
+    "performance": "Use SSD storage for best performance",
+    "backup_before_changes": "Always create snapshot before major changes",
+    "scaling": "Use templates for quick deployment of multiple identical environments"
+  }
+}

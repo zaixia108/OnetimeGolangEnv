@@ -1,0 +1,37 @@
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Logs
+*.log
+*.txt
+
+# Temporary files
+*.tmp
+*.temp
+~*
+.DS_Store
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Archives
+*.zip
+*.tar
+*.gz
+*.7z
+*.iso
+
+# Backup files
+*.bak
+*.old
+*.backup
